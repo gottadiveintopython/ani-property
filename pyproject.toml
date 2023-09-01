@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "ani-property"
+version = "0.1.0.dev0"
+description = "Automatically animate attributes in Kivy"
+authors = ["Nattōsai Mitō <flow4re2c@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "ani_property.py", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.8.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+kivy = "^2.2.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
