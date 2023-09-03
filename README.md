@@ -2,6 +2,8 @@
 
 A set of Python descriptors that animate numeric attributes of any object in a Kivy application.
 
+[Youtube](https://youtu.be/AI8YF3LvNqU)
+
 ```python
 from kivy.uix.wiget import Widget
 from ani_property import AniNumericProperty
