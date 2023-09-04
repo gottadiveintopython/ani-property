@@ -16,7 +16,7 @@ class CustomWidget(Widget):
 
 widget = CustomWidget(x=0, y=50)
 widget.ani_x = 100  # -> animates 'widget.x' from 0 to 100
-widget.ani_y = 100  # -> animates 'widget.y' from 50 to 200
+widget.ani_y = 200  # -> animates 'widget.y' from 50 to 200
 ```
 
 The application of the descriptors is not limited to Kivy properties.
@@ -69,7 +69,7 @@ class CustomWidget(Widget):
     ani_height = AniNumericProperty()
 ```
 
-is better than:
+is more preferable than:
 
 ```python
 class CustomWidget(Widget):
