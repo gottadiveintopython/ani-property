@@ -12,8 +12,8 @@ from kivy.clock import Clock
 
 class AniNumericProperty:
     def __init__(self, *, threshold=dp(2), speed=10.0):
-        self._threshold = threshold
-        self._speed = speed
+        self.threshold = threshold
+        self.speed = speed
 
     def __set_name__(self, owner, name):
         if not name.startswith("ani_"):
@@ -39,7 +39,7 @@ class AniNumericProperty:
             trigger = Clock.create_trigger(partial(self._animate, obj, actives), 0, True)
             obj._AniNumericProperty_actives = actives
             obj._AniNumericProperty_trigger = trigger
-        actives[self._target_attr] = (goal_value, self._threshold, self._speed, )
+        actives[self._target_attr] = (goal_value, self.threshold, self.speed, )
         trigger()
 
     def _animate(abs, setattr, getattr, obj, actives, dt):
@@ -62,8 +62,8 @@ class AniNumericProperty:
 
 class AniSequenceProperty:
     def __init__(self, *, threshold=dp(2), speed=10.0):
-        self._threshold = threshold
-        self._speed = speed
+        self.threshold = threshold
+        self.speed = speed
 
     def __set_name__(self, owner, name):
         if not name.startswith("ani_"):
@@ -89,7 +89,7 @@ class AniSequenceProperty:
             trigger = Clock.create_trigger(partial(self._animate, obj, actives), 0, True)
             obj._AniSequenceProperty_actives = actives
             obj._AniSequenceProperty_trigger = trigger
-        actives[self._target_attr] = (goal_seq, getattr(obj, self._target_attr), self._threshold, self._speed, )
+        actives[self._target_attr] = (goal_seq, getattr(obj, self._target_attr), self.threshold, self.speed, )
         trigger()
 
     def _animate(itertools_count, zip, abs, setattr, obj, actives, dt):
