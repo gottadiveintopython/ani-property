@@ -3,7 +3,6 @@ __all__ = (
     'add_property',
 )
 
-import typing as T
 from functools import partial
 import itertools
 from kivy.metrics import dp
@@ -16,11 +15,15 @@ class AniNumericProperty:
         self.speed = speed
 
     def __set_name__(self, owner, name):
-        if not name.startswith("ani_"):
-            raise ValueError(f"The name of an {self.__class__.__name__} instance must start with 'ani_' (was {name!r}).")
-        if len(name) < 5:
-            raise ValueError(f"The name of an {self.__class__.__name__} instance must be no smaller than 5 (was {name!r}).")
-        self._target_attr = name[4:]  # len('ani_') == 4
+        if name.startswith("ani_") and len(name) > 4:  # len('ani_') == 4
+            self._target_attr = name[4:]
+        elif name.startswith("_ani_") and len(name) > 5:  # len('_ani_') == 5
+            self._target_attr = name[5:]
+        else:
+            raise ValueError(
+                f"The name of an {self.__class__.__name__} instance must start with either 'ani_' or '_ani_' "
+                f"followed by at least one character (was {name!r})."
+            )
 
     def __get__(self, obj, objtype=None):
         if obj is None:
@@ -66,11 +69,15 @@ class AniSequenceProperty:
         self.speed = speed
 
     def __set_name__(self, owner, name):
-        if not name.startswith("ani_"):
-            raise ValueError(f"The name of an {self.__class__.__name__} instance must start with 'ani_' (was {name!r}).")
-        if len(name) < 5:
-            raise ValueError(f"The name of an {self.__class__.__name__} instance must be no smaller than 5 (was {name!r}).")
-        self._target_attr = name[4:]  # len('ani_') == 4
+        if name.startswith("ani_") and len(name) > 4:  # len('ani_') == 4
+            self._target_attr = name[4:]
+        elif name.startswith("_ani_") and len(name) > 5:  # len('_ani_') == 5
+            self._target_attr = name[5:]
+        else:
+            raise ValueError(
+                f"The name of an {self.__class__.__name__} instance must start with either 'ani_' or '_ani_' "
+                f"followed by at least one character (was {name!r})."
+            )
 
     def __get__(self, obj, objtype=None):
         if obj is None:

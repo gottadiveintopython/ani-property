@@ -16,14 +16,14 @@ def concrete_owner():
     return MyClass
 
 
-@pytest.mark.parametrize('name', ("x", "_ani_x", "ani_", "hello_everyone"))
+@pytest.mark.parametrize('name', ("x", "_ani_", "ani_", "hello_everyone"))
 def test_invalid_name(name, descriptor_cls):
     with pytest.raises(RuntimeError) as excinfo:
         type('MyClass', tuple(), {name: descriptor_cls(), })
     assert isinstance(excinfo.value.__cause__, ValueError)
 
 
-@pytest.mark.parametrize('name', ("x", "_ani_x", "ani_", "hello_everyone"))
+@pytest.mark.parametrize('name', ("x", "_ani_", "ani_", "hello_everyone"))
 def test_invalid_name_ver_dynamic(name, descriptor_cls):
     from ani_property import add_property
     MyClass = type('MyClass', tuple(), {})
