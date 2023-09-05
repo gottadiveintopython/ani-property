@@ -58,7 +58,7 @@ label = CustomLabel(color=(1.0, 1.0, 1.0, 1.0))
 label.ani_color = (1.0, 0.0, 0.0, 1.0)  # animates 'label.color' from white to red
 ```
 
-It's advisable to use `AniNumericProperty` instead of `AniMutableSequenceProperty` whenever possible due to performance reasons.
+It's advisable to use `AniNumericProperty` instead of `AniMutableSequenceProperty` or `AniSequenceProperty` whenever possible due to performance reasons.
 Thus, the following code:
 
 ```python

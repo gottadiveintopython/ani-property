@@ -1,19 +1,15 @@
 import pytest
 
 
-@pytest.fixture(scope='module', params=("AniNumericProperty", "AniMutableSequenceProperty", ))
+descriptor_cls_names = (
+    "AniNumericProperty", "AniMutableSequenceProperty", "AniSequenceProperty",
+)
+
+
+@pytest.fixture(scope='module', params=descriptor_cls_names)
 def descriptor_cls(request):
     import ani_property
     return getattr(ani_property, request.param)
-
-
-@pytest.fixture()
-def concrete_owner():
-    from ani_property import AniNumericProperty, AniMutableSequenceProperty
-    class MyClass:
-        ani_width = AniNumericProperty()
-        ani_vector2d = AniMutableSequenceProperty()
-    return MyClass
 
 
 @pytest.mark.parametrize('name', ("x", "_ani_", "ani_", "hello_everyone"))
@@ -43,27 +39,50 @@ def test_get_descriptor_ver_dynamic(descriptor_cls):
     assert MyClass.ani_attr.__class__ is descriptor_cls
 
 
-def test_goal_value(concrete_owner):
-    obj = concrete_owner()
+@pytest.mark.parametrize(
+    "descriptor_cls_name, value1, value2", [
+        ["AniNumericProperty", 0, 100],
+        ["AniMutableSequenceProperty", [10, 20, ], [30, 40, ]],
+        ["AniSequenceProperty", (10, 20, ), (30, 40, )],
+    ]
+)
+def test_goal_value(descriptor_cls_name, value1, value2):
+    import ani_property
+
+    descriptor_cls = getattr(ani_property, descriptor_cls_name)
+    MyClass = type('MyClass', tuple(), {'ani_attr': descriptor_cls(), })
+    obj = MyClass()
 
     with pytest.raises(AttributeError):
-        obj.ani_width
-    with pytest.raises(AttributeError):
-        obj.ani_vector2d
+        obj.ani_attr
+    obj.attr = value1
+    assert obj.ani_attr == value1
+    obj.ani_attr = value2
+    assert obj.ani_attr == value2
+    assert obj.attr == value1
+    del getattr(obj, f"_{descriptor_cls_name}_actives")['attr']
+    assert obj.ani_attr == value1
+    assert obj.attr == value1
 
-    obj.width = 0
-    assert obj.ani_width == 0
-    obj.vector2d = (0, 0)
-    assert obj.ani_vector2d == (0, 0)
 
-    obj.ani_width = 100
-    assert obj.ani_width == 100
-    assert obj.width == 0
-    obj.ani_vector2d = (100, 100)
-    assert obj.ani_vector2d == (100, 100)
-    assert obj.vector2d == (0, 0)
-
-    del obj._AniNumericProperty_actives['width']
-    del obj._AniMutableSequenceProperty_actives['vector2d']
-    assert obj.ani_width == 0
-    assert obj.ani_vector2d == (0, 0)
+@pytest.mark.parametrize(
+    "goal_seq, cur_seq, expected_seq", [
+        [(0, 1, ), (0, 1, ), (0, 1, ), ],
+        [(4, 4, ), (0, 1, ), (0, 1, ), ],
+        [(0, 1, ), (4, 4, ), (0, 1, ), ],
+        [(3, 1, ), (2, 4, ), (2, 1, ), ],
+        [(1, 3, ), (4, 2, ), (1, 2, ), ],
+        [(2, 1, ), (2, 4, ), (2, 1, ), ],
+        [(1, 2, ), (4, 2, ), (1, 2, ), ],
+    ]
+)
+def test_complicated_generator_comprehension(goal_seq, cur_seq, expected_seq):
+    any_updates = False
+    new_seq = tuple(
+        cur_elem
+        if (diff := goal_elem - cur_elem, any_updates := (any_updates or (diff < 0)), ) and goal_elem > cur_elem 
+        else goal_elem
+        for cur_elem, goal_elem in zip(cur_seq, goal_seq)
+    )
+    assert new_seq == expected_seq
+    assert any_updates is (cur_seq != new_seq)

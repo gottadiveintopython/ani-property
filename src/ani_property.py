@@ -1,5 +1,5 @@
 __all__ = (
-    'AniNumericProperty', 'AniMutableSequenceProperty',
+    'AniNumericProperty', 'AniMutableSequenceProperty', 'AniSequenceProperty',
     'add_property',
 )
 
@@ -79,10 +79,10 @@ class AniMutableSequenceProperty:
         obj.color = [255, 255, 255, 255]
         obj.ani_color = [255, 0, 0, 255]
 
-    The 'obj.color' will be updated in-place, which means the 'obj' won't notice it because 'obj.__setattr__()' won't
-    be called. If the sequence is a custom object that has a '__setitem__()' method, it will notice the update, and
-    is able to tell it anyone else. But in case it's not, like the above example, ``AniMutableSequenceProperty``
-    re-assigns the sequence to the attribute so that the 'obj' can notice the update.
+    The ``obj.color`` will be updated in-place, which means the ``obj`` won't notice it because ``obj.__setattr__()``
+    won't be called. If the sequence is a custom object that has a ``__setitem__()`` method, it would notice the
+    update, and is able to tell it anyone else. But in case it's not, like the above example,
+    ``AniMutableSequenceProperty`` re-assigns the sequence to the attribute so that the ``obj`` can notice the update.
     '''
     def __init__(self, *, threshold=dp(2), speed=10.0):
         self.threshold = threshold
@@ -142,6 +142,74 @@ class AniMutableSequenceProperty:
             return False
 
     _animate = staticmethod(partial(_animate, itertools.count, zip, abs, setattr))
+
+
+class AniSequenceProperty:
+    '''
+    Descriptor that animates an attribute that holds a mutable/immutable sequence of numbers.
+
+    Unlike :class:`AniMutableSequenceProperty`, this one creates a new sequence and assigns it to the attribute on every
+    update.
+    '''
+    def __init__(self, *, threshold=dp(2), speed=10.0, sequence_cls=tuple):
+        self.threshold = threshold
+        self.speed = speed
+        self.sequence_cls = sequence_cls
+
+    def __set_name__(self, owner, name):
+        if name.startswith("ani_") and len(name) > 4:  # len('ani_') == 4
+            self._target_attr = name[4:]
+        elif name.startswith("_ani_") and len(name) > 5:  # len('_ani_') == 5
+            self._target_attr = name[5:]
+        else:
+            raise ValueError(
+                f"The name of an {self.__class__.__name__} instance must start with either 'ani_' or '_ani_', "
+                f"and at least one character must follow it (was {name!r})."
+            )
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self
+        try:
+            return obj._AniSequenceProperty_actives[self._target_attr][0]
+        except (AttributeError, KeyError):
+            return getattr(obj, self._target_attr)
+
+    def __set__(self, obj, goal_seq):
+        try:
+            actives = obj._AniSequenceProperty_actives
+            trigger = obj._AniSequenceProperty_trigger
+        except AttributeError:
+            actives = {}
+            trigger = Clock.create_trigger(partial(self._animate, obj, actives), 0, True)
+            obj._AniSequenceProperty_actives = actives
+            obj._AniSequenceProperty_trigger = trigger
+        actives[self._target_attr] = (
+            goal_seq, self.threshold, self.speed, self.sequence_cls,
+        )
+        trigger()
+
+    def _animate(bool, zip, abs, setattr, getattr, obj, actives, dt):
+        for target_attr, (goal_seq, threshold, speed, sequence_cls) in actives.copy().items():
+            cur_seq = getattr(obj, target_attr)
+            any_updates = False
+            new_sequence = sequence_cls(
+                (diff * p + cur_elem)
+                if (diff := goal_elem - cur_elem, any_updates := (any_updates or bool(diff)), ) \
+                    and abs(diff) > threshold and (p := dt * speed) < 1.0
+                else goal_elem
+                for cur_elem, goal_elem in zip(cur_seq, goal_seq)
+            )
+            if any_updates:
+                setattr(obj, target_attr, new_sequence)
+            else:
+                del actives[target_attr]
+        
+        # Stop the ClockEvent instance if there is nothing left to animate
+        if not actives:
+            return False
+
+    _animate = staticmethod(partial(_animate, bool, zip, abs, setattr, getattr))
 
 
 def add_property(cls, name, descriptor):
