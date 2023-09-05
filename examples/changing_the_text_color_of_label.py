@@ -3,11 +3,11 @@ from kivy.app import App
 from kivy.clock import Clock
 from kivy.uix.label import Label
 
-from ani_property import AniSequenceProperty
+from ani_property import AniMutableSequenceProperty
 
 
 class CustomLabel(Label):
-    ani_color = AniSequenceProperty(threshold=0.02, speed=2.0)
+    ani_color = AniMutableSequenceProperty(threshold=0.02, speed=2.0)
 
 
 class SampleApp(App):

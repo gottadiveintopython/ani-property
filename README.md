@@ -47,18 +47,18 @@ And you can animate a number sequence as well.
 
 ```python
 from kivy.uix.label import Label
-from ani_property import AniSequenceProperty
+from ani_property import AniMutableSequenceProperty
 
 
 class CustomLabel(Label):
-    ani_color = AniSequenceProperty(threshold=0.02)
+    ani_color = AniMutableSequenceProperty(threshold=0.02)
 
 
 label = CustomLabel(color=(1.0, 1.0, 1.0, 1.0))
 label.ani_color = (1.0, 0.0, 0.0, 1.0)  # animates 'label.color' from white to red
 ```
 
-It's advisable to use `AniNumericProperty` instead of `AniSequenceProperty` whenever possible due to performance reasons.
+It's advisable to use `AniNumericProperty` instead of `AniMutableSequenceProperty` whenever possible due to performance reasons.
 Thus, the following code:
 
 ```python
@@ -73,6 +73,6 @@ is more preferable than:
 
 ```python
 class CustomWidget(Widget):
-    ani_pos = AniSequenceProperty()
-    ani_size = AniSequenceProperty()
+    ani_pos = AniMutableSequenceProperty()
+    ani_size = AniMutableSequenceProperty()
 ```

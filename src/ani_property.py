@@ -1,5 +1,5 @@
 __all__ = (
-    'AniNumericProperty', 'AniSequenceProperty',
+    'AniNumericProperty', 'AniMutableSequenceProperty',
     'add_property',
 )
 
@@ -10,6 +10,9 @@ from kivy.clock import Clock
 
 
 class AniNumericProperty:
+    '''
+    Descriptor that animates an attribute that holds a numeric value.
+    '''
     def __init__(self, *, threshold=dp(2), speed=10.0):
         self.threshold = threshold
         self.speed = speed
@@ -21,8 +24,8 @@ class AniNumericProperty:
             self._target_attr = name[5:]
         else:
             raise ValueError(
-                f"The name of an {self.__class__.__name__} instance must start with either 'ani_' or '_ani_' "
-                f"followed by at least one character (was {name!r})."
+                f"The name of an {self.__class__.__name__} instance must start with either 'ani_' or '_ani_', "
+                f"and at least one character must follow it (was {name!r})."
             )
 
     def __get__(self, obj, objtype=None):
@@ -63,7 +66,24 @@ class AniNumericProperty:
     _animate = staticmethod(partial(_animate, abs, setattr, getattr))
 
 
-class AniSequenceProperty:
+class AniMutableSequenceProperty:
+    '''
+    Descriptor that animates an attribute that holds a mutable sequence of numbers.
+
+    .. code-block::
+
+        class MyClass:
+            ani_color = AniMutableSequenceProperty(threshold=1.0)
+
+        obj = MyClass()
+        obj.color = [255, 255, 255, 255]
+        obj.ani_color = [255, 0, 0, 255]
+
+    The 'obj.color' will be updated in-place, which means the 'obj' won't notice it because 'obj.__setattr__()' won't
+    be called. If the sequence is a custom object that has a '__setitem__()' method, it will notice the update, and
+    is able to tell it anyone else. But in case it's not, like the above example, ``AniMutableSequenceProperty``
+    re-assigns the sequence to the attribute so that the 'obj' can notice the update.
+    '''
     def __init__(self, *, threshold=dp(2), speed=10.0):
         self.threshold = threshold
         self.speed = speed
@@ -75,27 +95,27 @@ class AniSequenceProperty:
             self._target_attr = name[5:]
         else:
             raise ValueError(
-                f"The name of an {self.__class__.__name__} instance must start with either 'ani_' or '_ani_' "
-                f"followed by at least one character (was {name!r})."
+                f"The name of an {self.__class__.__name__} instance must start with either 'ani_' or '_ani_', "
+                f"and at least one character must follow it (was {name!r})."
             )
 
     def __get__(self, obj, objtype=None):
         if obj is None:
             return self
         try:
-            return obj._AniSequenceProperty_actives[self._target_attr][0]
+            return obj._AniMutableSequenceProperty_actives[self._target_attr][0]
         except (AttributeError, KeyError):
             return getattr(obj, self._target_attr)
 
     def __set__(self, obj, goal_seq):
         try:
-            actives = obj._AniSequenceProperty_actives
-            trigger = obj._AniSequenceProperty_trigger
+            actives = obj._AniMutableSequenceProperty_actives
+            trigger = obj._AniMutableSequenceProperty_trigger
         except AttributeError:
             actives = {}
             trigger = Clock.create_trigger(partial(self._animate, obj, actives), 0, True)
-            obj._AniSequenceProperty_actives = actives
-            obj._AniSequenceProperty_trigger = trigger
+            obj._AniMutableSequenceProperty_actives = actives
+            obj._AniMutableSequenceProperty_trigger = trigger
         actives[self._target_attr] = (goal_seq, getattr(obj, self._target_attr), self.threshold, self.speed, )
         trigger()
 
@@ -112,8 +132,7 @@ class AniSequenceProperty:
                 else:
                     cur_seq[idx] = goal_elem
             if any_updates:
-                # This is a Kivy specific thing. If the 'obj' is an EventDispatcher and the 'target_attr' is the name
-                # of a Kivy property, this will notify the 'obj' that the content of the sequence has changed.
+                # The re-assignment mentioned in the class doc. 
                 setattr(obj, target_attr, cur_seq)
             else:
                 del actives[target_attr]

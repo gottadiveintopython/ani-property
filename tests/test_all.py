@@ -1,7 +1,7 @@
 import pytest
 
 
-@pytest.fixture(scope='module', params=("AniNumericProperty", "AniSequenceProperty", ))
+@pytest.fixture(scope='module', params=("AniNumericProperty", "AniMutableSequenceProperty", ))
 def descriptor_cls(request):
     import ani_property
     return getattr(ani_property, request.param)
@@ -9,10 +9,10 @@ def descriptor_cls(request):
 
 @pytest.fixture()
 def concrete_owner():
-    from ani_property import AniNumericProperty, AniSequenceProperty
+    from ani_property import AniNumericProperty, AniMutableSequenceProperty
     class MyClass:
         ani_width = AniNumericProperty()
-        ani_vector2d = AniSequenceProperty()
+        ani_vector2d = AniMutableSequenceProperty()
     return MyClass
 
 
@@ -64,6 +64,6 @@ def test_goal_value(concrete_owner):
     assert obj.vector2d == (0, 0)
 
     del obj._AniNumericProperty_actives['width']
-    del obj._AniSequenceProperty_actives['vector2d']
+    del obj._AniMutableSequenceProperty_actives['vector2d']
     assert obj.ani_width == 0
     assert obj.ani_vector2d == (0, 0)

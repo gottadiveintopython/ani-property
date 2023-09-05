@@ -2,7 +2,7 @@ from kivy.app import App
 from kivy.lang import Builder
 from kivy.uix.button import Button
 
-from ani_property import AniSequenceProperty
+from ani_property import AniMutableSequenceProperty
 
 KV_CODE = r'''
 Widget:
@@ -13,7 +13,7 @@ Widget:
 
 
 class CustomButton(Button):
-    ani_pos = AniSequenceProperty()
+    ani_pos = AniMutableSequenceProperty()
 
 
 class SampleApp(App):
