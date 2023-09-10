@@ -43,13 +43,17 @@ from ani_property import AniNumericProperty, add_property
 add_property(CustomWidget, 'ani_width', AniNumericProperty())
 ```
 
-And you can animate a number sequence as well.
+## Sequence-type Attribute
+
+You can animate a number sequence as well.
 
 ```python
 from kivy.uix.label import Label
 from ani_property import AniMutableSequenceProperty
 
 
+# WARNING: Changing the 'Label.color' causes the 'Label' to re-create its texture
+# so animating it may be expensive.
 class CustomLabel(Label):
     ani_color = AniMutableSequenceProperty(threshold=0.02)
 
@@ -58,21 +62,31 @@ label = CustomLabel(color=(1.0, 1.0, 1.0, 1.0))
 label.ani_color = (1.0, 0.0, 0.0, 1.0)  # animates 'label.color' from white to red
 ```
 
-It's advisable to use `AniNumericProperty` instead of `AniMutableSequenceProperty` or `AniSequenceProperty` whenever possible due to performance reasons.
-Thus, the following code:
+There are two types of descriptors for sequence-type attributes.
+
+- `AniMutableSequenceProperty` modifies the sequence in-place.
+- `AniSequenceProperty` creates a new sequence and assigns it to the target attribute
+
+## Performance Tip
+
+It may be better to use `AniNumericProperty` instead of `AniMutableSequenceProperty` or `AniSequenceProperty` when
+your app animates a lot of stuffs at a time.
 
 ```python
 class CustomWidget(Widget):
     ani_x = AniNumericProperty()
     ani_y = AniNumericProperty()
-    ani_width = AniNumericProperty()
-    ani_height = AniNumericProperty()
-```
-
-is more preferable than:
-
-```python
-class CustomWidget(Widget):
     ani_pos = AniMutableSequenceProperty()
-    ani_size = AniMutableSequenceProperty()
+
+
+w = CustomWidget()
+
+# When the performance is important
+w.x = ...
+w.y = ...
+w.pos = ...  # <- NOT RECOMMENDED
 ```
+
+## Defining a new class just to add descriptors is ... cumbersome
+
+`ani_property.install()`

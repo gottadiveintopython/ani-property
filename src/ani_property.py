@@ -1,8 +1,9 @@
 __all__ = (
     'AniNumericProperty', 'AniMutableSequenceProperty', 'AniSequenceProperty',
-    'add_property',
+    'add_property', 'install',
 )
 
+import typing as T
 from functools import partial
 import itertools
 from kivy.metrics import dp
@@ -215,3 +216,52 @@ class AniSequenceProperty:
 def add_property(cls, name, descriptor):
     setattr(cls, name, descriptor)
     descriptor.__set_name__(cls, name)
+
+
+def install(*, target=None, prefix:T.Literal['ani_', '_ani_']='ani_'):
+    '''
+    Adds the ``ani_xxx`` version of sizing/positioning properties (excluding ``pos_hint``) to the
+    :class:`kivy.uix.widget.Widget`.
+
+    .. code-block::
+
+        from kivy.uix.widget import Widget
+        import ani_property
+
+        ani_property.install()
+
+        widget = Widget()
+        widget.ani_x = 300
+        widget.ani_size_hint_x = 2.0
+
+    If you don't want to pollute the ``Widget``, specify your own widget class through the ``target`` parameter.
+
+    .. code-block::
+
+        install(target=YourOwnWidgetClass)
+    '''
+
+    # LOAD_FAST
+    _hasattr = hasattr
+    _add_property = add_property
+    _AniNumericProperty = AniNumericProperty
+    _AniMutableSequenceProperty = AniMutableSequenceProperty
+
+    if target is None:
+        from kivy.uix.widget import Widget as target
+
+    numeric_property_names = (
+        'opacity',
+        'x', 'y', 'center_x', 'center_y', 'right', 'top', 'width', 'height',
+        'size_hint_x', 'size_hint_y', 'size_hint_min_x', 'size_hint_min_y', 'size_hint_max_x', 'size_hint_max_y',
+    )
+    for name in numeric_property_names:
+        assert _hasattr(target, name)
+        _add_property(target, prefix + name, _AniNumericProperty())
+
+    sequence_property_names = (
+        'pos', 'center', 'size', 'size_hint', 'size_hint_min', 'size_hint_max',
+    )
+    for name in sequence_property_names:
+        assert _hasattr(target, name)
+        _add_property(target, prefix + name, _AniMutableSequenceProperty())
