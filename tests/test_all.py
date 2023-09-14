@@ -60,7 +60,7 @@ def test_goal_value(descriptor_cls_name, value1, value2):
     obj.ani_attr = value2
     assert obj.ani_attr == value2
     assert obj.attr == value1
-    del getattr(obj, f"_{descriptor_cls_name}_actives")['attr']
+    MyClass.ani_attr.cancel(obj)
     assert obj.ani_attr == value1
     assert obj.attr == value1
 
