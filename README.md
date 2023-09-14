@@ -35,6 +35,12 @@ obj.value = 40
 obj.ani_value = 100  # -> animates 'obj.value' from 40 to 100
 ```
 
+You can cancel the animation as follows.
+
+```python
+MyClass.ani_value.cancel(obj)
+```
+
 You can also add a descriptor to a class outside of its definition. 
 
 ```python

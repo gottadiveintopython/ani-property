@@ -66,6 +66,12 @@ class AniNumericProperty:
 
     _animate = staticmethod(partial(_animate, abs, setattr, getattr))
 
+    def cancel(self, obj):
+        try:
+            del obj._AniNumericProperty_actives[self._target_attr]
+        except (AttributeError, KeyError):
+            pass
+
 
 class AniMutableSequenceProperty:
     '''
@@ -144,6 +150,12 @@ class AniMutableSequenceProperty:
 
     _animate = staticmethod(partial(_animate, itertools.count, zip, abs, setattr))
 
+    def cancel(self, obj):
+        try:
+            del obj._AniMutableSequenceProperty_actives[self._target_attr]
+        except (AttributeError, KeyError):
+            pass
+
 
 class AniSequenceProperty:
     '''
@@ -211,6 +223,12 @@ class AniSequenceProperty:
             return False
 
     _animate = staticmethod(partial(_animate, bool, zip, abs, setattr, getattr))
+
+    def cancel(self, obj):
+        try:
+            del obj._AniSequenceProperty_actives[self._target_attr]
+        except (AttributeError, KeyError):
+            pass
 
 
 def add_property(cls, name, descriptor):
