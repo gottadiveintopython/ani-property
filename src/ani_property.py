@@ -1,13 +1,15 @@
 __all__ = (
     'AniNumericProperty', 'AniMutableSequenceProperty', 'AniSequenceProperty',
-    'add_property', 'install',
+    'add_property', 'install', 'AniMagnet',
 )
 
 import typing as T
 from functools import partial
 import itertools
 from kivy.metrics import dp
+from kivy.properties import BooleanProperty, ListProperty
 from kivy.clock import Clock
+from kivy.uix.widget import Widget
 
 
 class AniNumericProperty:
@@ -266,7 +268,7 @@ def install(*, target=None, prefix:T.Literal['ani_', '_ani_']='ani_'):
     _AniMutableSequenceProperty = AniMutableSequenceProperty
 
     if target is None:
-        from kivy.uix.widget import Widget as target
+        target = Widget
 
     numeric_property_names = (
         'opacity',
@@ -283,3 +285,59 @@ def install(*, target=None, prefix:T.Literal['ani_', '_ani_']='ani_'):
     for name in sequence_property_names:
         assert _hasattr(target, name)
         _add_property(target, prefix + name, _AniMutableSequenceProperty())
+
+
+class AniMagnet(Widget):
+    '''
+    Inspired by https://github.com/kivy-garden/garden.magnet.
+    '''
+
+    magnet_disabled = BooleanProperty(False)
+    magnetic_properties = ListProperty({'width', 'height', 'x', 'y', })
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._unbinding_params = ''  # any empty sequence is fine.
+        fbind = self.fbind
+        t = Clock.schedule_once(self._reset, -1)
+        fbind('children', t)
+        fbind('magnet_disabled', t)
+        fbind('magnetic_properties', t)
+
+
+    def _reset(self, dt):
+        if self._unbinding_params:
+            unbind_uid = self.unbind_uid
+            for prop_name, id in self._unbinding_params:
+                unbind_uid(prop_name, id)
+            self._unbinding_params = ''
+        children = self.children
+        if not children:
+            return
+
+        self_props = self.magnetic_properties
+        child_props = self_props if self.magnet_disabled else tuple('ani_' + name for name in self_props)
+        if (diff := AniMagnet.magnetic_properties.defaultvalue.difference(self_props)):
+            self_props = itertools.chain(self_props, diff)
+            child_props = itertools.chain(child_props, diff)
+
+        if len(children) == 1:
+            target = children[0]
+            callback = self._update_child
+        else:
+            target = children
+            callback = self._update_children
+        fbind = self.fbind
+        self._unbinding_params = tuple(
+            (f := partial(callback, target, c_prop), f(None, getattr(self, s_prop), ), ) and (s_prop, fbind(s_prop, f), )
+            for s_prop, c_prop in zip(self_props, child_props)
+        )
+
+    def _update_child(setattr, child, prop, self, value):
+        setattr(child, prop, value)
+    _update_child = staticmethod(partial(_update_child, setattr))
+
+    def _update_children(setattr, children, prop, self, value):
+        for c in children:
+            setattr(c, prop, value)
+    _update_children = staticmethod(partial(_update_children, setattr))
