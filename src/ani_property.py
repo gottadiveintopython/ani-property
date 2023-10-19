@@ -233,6 +233,24 @@ class AniSequenceProperty:
             pass
 
 
+class _ReferenceListProperty:
+    '''
+    (internal)
+    '''
+    def __init__(self, *attr_names):
+        self.attr_names = attr_names
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self
+        else:
+            return [getattr(obj, name) for name in self.attr_names]
+
+    def __set__(self, obj, values):
+        for name, value in zip(self.attr_names, values):
+            setattr(obj, name, value)
+
+
 def add_property(cls, name, descriptor):
     setattr(cls, name, descriptor)
     descriptor.__set_name__(cls, name)
@@ -240,8 +258,8 @@ def add_property(cls, name, descriptor):
 
 def install(*, target=None, prefix:T.Literal['ani_', '_ani_']='ani_'):
     '''
-    Adds the ``ani_xxx`` version of sizing/positioning properties (excluding ``pos_hint``) to the
-    :class:`kivy.uix.widget.Widget`.
+    Adds the ``ani_xxx`` version of sizing/positioning properties (excluding ``ani_pos_hint`` and ``ani_center``) to
+    the :class:`kivy.uix.widget.Widget`.
 
     .. code-block::
 
@@ -262,29 +280,31 @@ def install(*, target=None, prefix:T.Literal['ani_', '_ani_']='ani_'):
     '''
 
     # LOAD_FAST
+    _setattr = setattr
     _hasattr = hasattr
     _add_property = add_property
     _AniNumericProperty = AniNumericProperty
-    _AniMutableSequenceProperty = AniMutableSequenceProperty
 
     if target is None:
         target = Widget
 
-    numeric_property_names = (
-        'opacity',
-        'x', 'y', 'center_x', 'center_y', 'right', 'top', 'width', 'height',
-        'size_hint_x', 'size_hint_y', 'size_hint_min_x', 'size_hint_min_y', 'size_hint_max_x', 'size_hint_max_y',
-    )
-    for name in numeric_property_names:
+    sequence_properties = {
+        'pos': ('x', 'y'),
+        'size': ('width', 'height'),
+        'size_hint': ('size_hint_x', 'size_hint_y'),
+        'size_hint_min': ('size_hint_min_x', 'size_hint_min_y'),
+        'size_hint_max': ('size_hint_max_x', 'size_hint_max_y'),
+    }
+    numeric_properties = tuple(itertools.chain(
+        itertools.chain.from_iterable(sequence_properties.values()),
+        ('opacity', 'center_x', 'center_y'),
+    ))
+    for name in numeric_properties:
         assert _hasattr(target, name)
         _add_property(target, prefix + name, _AniNumericProperty())
-
-    sequence_property_names = (
-        'pos', 'center', 'size', 'size_hint', 'size_hint_min', 'size_hint_max',
-    )
-    for name in sequence_property_names:
+    for name, referents in sequence_properties.items():
         assert _hasattr(target, name)
-        _add_property(target, prefix + name, _AniMutableSequenceProperty())
+        _setattr(target, prefix + name, _ReferenceListProperty(*(prefix + r for r in referents)))
 
 
 class AniMagnet(Widget):
