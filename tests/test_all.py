@@ -77,6 +77,9 @@ def test_goal_value(descriptor_cls_name, value1, value2):
     ]
 )
 def test_complicated_generator_comprehension(goal_seq, cur_seq, expected_seq):
+    '''
+    'AniSequenceProperty._animate()'の中で用いられているコードのテスト
+    '''
     any_updates = False
     new_seq = tuple(
         cur_elem
