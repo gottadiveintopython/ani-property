@@ -304,20 +304,19 @@ class AniMagnet(Widget):
         fbind('magnet_disabled', t)
         fbind('magnetic_properties', t)
 
-
-    def _reset(self, dt):
+    def _reset(self, dt, _musts=magnetic_properties.defaultvalue):
         if self._unbinding_params:
             unbind_uid = self.unbind_uid
-            for prop_name, id in self._unbinding_params:
-                unbind_uid(prop_name, id)
+            for prop, id in self._unbinding_params:
+                unbind_uid(prop, id)
             self._unbinding_params = ''
         children = self.children
         if not children:
             return
 
         self_props = self.magnetic_properties
-        child_props = self_props if self.magnet_disabled else tuple('ani_' + name for name in self_props)
-        if (diff := AniMagnet.magnetic_properties.defaultvalue.difference(self_props)):
+        child_props = self_props if self.magnet_disabled else ('ani_' + prop for prop in self_props)
+        if (diff := _musts.difference(self_props)):
             self_props = itertools.chain(self_props, diff)
             child_props = itertools.chain(child_props, diff)
 
